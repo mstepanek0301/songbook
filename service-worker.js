@@ -1,4 +1,4 @@
-var cacheName = "cache-v0";
+var cacheName = "cache-v25-11-30";
 var assets = [
 	"book.html",
 	"books.html",
