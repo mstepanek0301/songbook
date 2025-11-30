@@ -1,0 +1,184 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<title>Edit book | Songbook</title>
+	<style>
+		li {
+			padding: 0.8em 1.2em;
+			display: block;
+		}
+		li:hover {
+			background-color: #f9c1a1;
+		}
+		li button {
+			float: right;
+			margin: -0.3em -0.8em 0 0;
+			height: 2em;
+			-webkit-user-select: none;
+			user-select: none;
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<h1>Edit book</h1>
+	<a id="done" class="button">Done</a>
+	<label>Title <input id="title"></label>
+	<button onclick="deleteBook()">Delete book</button>
+	<ul id="songs"></ul>
+	<details>
+		<summary>Add songs</summary>
+		<label>
+			Search
+			<input type="search" oninput="showSongsFilteredBy(this.value)">
+		</label>
+		<ul id="all-songs"></ul>
+	</details>
+</body>
+<script src="common.js"></script>
+<script>
+	var id = getQueryParameter("id");
+	if (id === undefined || !validateId(id)) location.href = "books.html";
+	var bookHead = localStorage.getItem("sbBookHead" + id);
+	if (bookHead === null) location.href = "books.html";
+	bookHead = JSON.parse(bookHead);
+	var bookContent = localStorage.getItem("sbBookContent" + id);
+	var saved = false;
+	var deleted = false;
+
+	document.getElementById("done").setAttribute("href", "book.html?id=" + id);
+	document.getElementById("title").value = bookHead.title;
+
+	var songCount = parseInt(localStorage.getItem("sbSongCount") || "0");
+	var songs = {}, ids = [];
+	for (var songId = 0; songId < songCount; songId++) {
+		var songIdString = songId.toString();
+		var saved = localStorage.getItem("sbSongHead" + songIdString);
+		if (!saved) continue;
+		songs[songIdString] = JSON.parse(saved);
+		ids.push(songIdString);
+	}
+
+	var songsInBook = {};
+	var input = {buffer: bookContent, index: 0};
+	for (var songId = readUntil(input, " "); songId; songId = readUntil(input, " ")) {
+		songsInBook[songId] = true;
+	}
+
+	function writeSongById(out, id, updatable) {
+		var song = songs[id];
+		writeOpenTag(out, "li");
+			out.push("<button onclick=\"toggleSong(event, ");
+			out.push(id);
+			out.push(")\"");
+			if (updatable) {
+				out.push(" id=\"button-");
+				out.push(id);
+				out.push("\"");
+			}
+			out.push(">");
+				writeText(out, songsInBook[id] ? "Remove" : "Add");
+			writeCloseTag(out, "button");
+			writeText(out, song.title || "Untitled");
+			writeOpenTag(out, "br");
+			if (song.artist) writeTagText(out, "small", song.artist);
+		writeCloseTag(out, "li");
+	}
+
+	function showSongsInBook() {
+		var songList = [];
+		for (var songId in songsInBook) {
+			if (!songsInBook[songId]) continue;
+			songList.push(songId);
+		}
+		songList.sort(function(a, b) {
+			return compareStrings(songs[a].title, songs[b].title)
+				|| compareStrings(songs[a].artist, songs[b].artist);
+		});
+		var out = [];
+		for (var i = 0; i < songList.length; i++) {
+			writeSongById(out, songList[i], false);
+		}
+		document.getElementById("songs").innerHTML = out.join("");
+	}
+	showSongsInBook();
+
+	function compareStrings(a, b) {
+		var aLower = a.toLowerCase(), bLower = b.toLowerCase();
+		if (aLower === bLower) return 0;
+		if (aLower < bLower) return -1;
+		return 1;
+	}
+	function compareSongs(a, b) {
+		return compareStrings(songs[a].title, songs[b].title)
+			|| compareStrings(songs[a].artist || "", songs[b].artist || "");
+	}
+	ids.sort(compareSongs);
+
+	function matches(song, query) {
+		return song.title.toLowerCase().indexOf(query.toLowerCase()) !== -1;
+	}
+	function showSongsFilteredBy(query) {
+		var out = [];
+		for (var i = 0; i < ids.length; i++) {
+			var song = songs[ids[i]];
+			if (!matches(song, query)) continue;
+			writeSongById(out, ids[i].toString(), true);
+		}
+		document.getElementById("all-songs").innerHTML = out.join("");
+	}
+	showSongsFilteredBy("");
+
+	function toggleSong(event, id) {
+		event.preventDefault();
+		value = !songsInBook[id];
+		songsInBook[id] = value;
+		var elem = document.getElementById("button-" + id)
+		if (elem) elem.innerHTML = value ? "Remove" : "Add";
+		showSongsInBook();
+	}
+
+	function unsave() {
+		saved = false;
+	}
+	function save() {
+		if (saved || deleted) return;
+		localStorage.setItem("sbBookHead" + id, JSON.stringify({
+			title: document.getElementById("title").value,
+			dateModified: Date.now(),
+			dateCreated: bookHead.dateCreated,
+		}));
+		var bookContent = [];
+		for (var songId in songsInBook) {
+			if (!songsInBook[songId]) continue;
+			bookContent.push(songId);
+		}
+		localStorage.setItem("sbBookContent" + id, bookContent.join(" "));
+	}
+	setupSaving(save, unsave);
+
+	function deleteBook() {
+		if (prompt(
+			"Are you sure you want to delete the book \""
+			+ (document.getElementById("title").value || "Untitled")
+			+ "\"? (OK or Cancel)"
+		) === null) return;
+		deleted = true;
+		localStorage.removeItem("sbBookHead" + id);
+		localStorage.removeItem("sbBookContent" + id);
+		location.href = "books.html";
+	}
+</script>
+</html>

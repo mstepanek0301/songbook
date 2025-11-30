@@ -1,0 +1,145 @@
+html {
+	min-height: 100%;
+	font-family: system-ui, sans-serif;
+
+	background-color: #fce0d0;
+	color: #301404;
+
+	-webkit-tap-highlight-color: transparent;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+label {
+	display: block;
+	margin: 5px 0;
+}
+
+input, select, textarea, button {
+	font-family: inherit;
+	font-size: inherit;
+	margin: 0 0.2em;
+	height: 2.5em;
+	border-radius: 1.25em;
+	box-sizing: border-box;
+	padding: 0 0.8em;
+	border: none;
+	color: inherit;
+	background-color: #f9c1a1;
+}
+
+button, .button {
+	margin: 4px auto;
+}
+
+input:focus, select:focus, textarea:focus, button:focus, header a:focus, .button:focus,
+input:active, select:active, textarea:active, button:active, header a:active, .button:active {
+	outline: 2px solid #f06414;
+}
+
+button:hover, header a:hover, .button:hover {
+	background-color: #eeb898;
+}
+
+select, button {
+	cursor: pointer;
+}
+
+header p {
+	font-size: large;
+	margin: 0.4em 0;
+}
+
+header a, .button {
+	display: inline-block;
+	color: inherit;
+	background-color: #f9c1a1;
+	text-decoration: none;
+	padding: 0.3em 0.6em;
+	border-radius: 16px;
+	outline-offset: 0;
+}
+
+.button {
+	margin-top: 0;
+	margin-bottom: 1em;
+}
+
+body {
+	text-align: center;
+	margin: 24px 16px;
+}
+
+::selection {
+	background-color: #f0641440;
+}
+
+h1 {
+	font-weight: normal;
+	margin-top: 1.5em;
+}
+
+h2 {
+	font-size: medium;
+	margin-top: 1.5em;
+	margin-bottom: 0.5em;
+}
+
+details {
+	margin: 1em 0;
+}
+
+summary {
+	font-weight: bold;
+	padding: 5px 0;
+}
+
+/* song lists */
+
+ul {
+	list-style: none;
+	padding: 0;
+}
+
+.buttons {
+	margin: 1em 0;
+}
+
+.buttons button {
+	display: block;
+	width: 10em;
+	max-width: 100%;
+}
+
+.buttons :first-child, li:first-child {
+	border-radius: 1.25em 1.25em 0.5em 0.5em;
+}
+
+.buttons :last-child, li:last-child {
+	border-radius: 0.5em 0.5em 1.25em 1.25em;
+}
+
+.buttons :only-child, li:only-child {
+	border-radius: 1.25em;
+}
+
+li {
+	max-width: 400px;
+	background-color: #f9c1a1;
+	border-radius: 0.5em;
+	margin: 4px auto;
+	text-align: left;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+li:hover {
+	background-color: #eeb898;
+}
+
+li a {
+	text-decoration: none;
+	color: inherit;
+	padding: 0.8em 1.2em;
+	display: block;
+}

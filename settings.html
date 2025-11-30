@@ -1,0 +1,148 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<title>Settings | Songbook</title>
+	<style>
+		button[disabled] {
+			color: #967a6a;
+			outline: none;
+			background-color: #f9c1a1;
+			cursor: wait;
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<h1>Settings</h1>
+	<h2>Notation</h2>
+	<label>Scale <select oninput="updateBFlat(this.value)" id="scale">
+		<option value="b">CDEFGABC</option>
+		<option value="h">CDEFGAHC</option>
+	</select></label>
+	<label>Off-scale notes</label>
+	<select id="note-4">
+		<option value="sharp">C&sharp;</option>
+		<option value="flat">C&flat;</option>
+	</select>
+	<select id="note-6">
+		<option value="sharp">D&sharp;</option>
+		<option value="flat">E&flat;</option>
+	</select>
+	<select id="note-9">
+		<option value="sharp">F&sharp;</option>
+		<option value="flat">G&flat;</option>
+	</select>
+	<select id="note-11">
+		<option value="sharp">G&sharp;</option>
+		<option value="flat">A&flat;</option>
+	</select>
+	<select id="note-1">
+		<option value="sharp">A&sharp;</option>
+		<option value="flat" id="b-flat">B&flat;</option>
+	</select>
+	<h2>Defaults</h2>
+	<label>Tuning <input id="tuning"></label>
+	<label>Text direction <select id="dir">
+			<option value="ltr">Left-to-right</option>
+			<option value="rtl">Right-to-left</option>
+		</select></label>
+	<h2>Library</h2>
+	<label>Sort songs by <select id="sort-songs-by">
+		<option value="title">Title, then artist</option>
+		<option value="artist">Artist, then title</option>
+		<option value="date-modified">Date modified</option>
+		<option value="date-created">Date created</option>
+	</select></label>
+	<label>Sort books by <select id="sort-books-by">
+		<option value="title">Title</option>
+		<option value="date-modified">Date modified</option>
+		<option value="date-created">Date created</option>
+	</select></label>
+	<h2>App</h2>
+	<div id="installation"></div>
+</body>
+<script src="common.js"></script>
+<script>
+	function updateBFlat(scale) {
+		var elem = document.getElementById("b-flat")
+		if (scale === "b") elem.innerHTML = "B&flat;";
+		else elem.innerHTML = "B";
+	}
+	updateBFlat(settings.scale);
+
+	for (var option in settings) document.getElementById(option).value = settings[option];
+	var saved = false;
+	function unsave() {
+		saved = false;
+	}
+	function save() {
+		for (var option in settings) settings[option] = document.getElementById(option).value;
+		localStorage.setItem("sbSettings", JSON.stringify(settings));
+	}
+	setupSaving(save, unsave);
+
+	if ("serviceWorker" in navigator) {
+		updateInstallation();
+	}
+
+	function updateInstallation() {
+		navigator.serviceWorker.getRegistration().then(function(registration) {
+			out = [];
+			if (registration) {
+				writeOpenTagAttr(out, "button", "onclick", "uninstall(this)");
+					writeText(out, "Uninstall");
+				writeCloseTag(out, "button");
+				writeText(out, " ");
+				writeOpenTagAttr(out, "button", "onclick", "update(this)");
+					writeText(out, "Update");
+				writeCloseTag(out, "button");
+			}
+			else {
+				writeOpenTagAttr(out, "button", "onclick", "install(this)");
+					writeText(out, "Install");
+				writeCloseTag(out, "button");
+			}
+			document.getElementById("installation").innerHTML = out.join("");
+		});
+	}
+
+	function install(elem) {
+		elem.innerHTML = "Installing";
+		elem.setAttribute("disabled", "");
+		navigator.serviceWorker.register("service-worker.js").then(updateInstallation, function(error) {
+			alert("Installation failed. It's probably because you're offline.");
+			updateInstallation();
+		});
+	}
+
+	function uninstall(elem) {
+		navigator.serviceWorker.getRegistration().then(function(registration) {
+			registration.unregister().then(updateInstallation);
+		});
+	}
+
+	function update(elem) {
+		elem.innerHTML = "Updating";
+		elem.setAttribute("disabled", "");
+		navigator.serviceWorker.register("service-worker.js").then(function() {
+			alert("Updated successfully.");
+			updateInstallation();
+		}, function(error) {
+			alert("Update failed. It's probably because you're offline.");
+			updateInstallation();
+		});
+	}
+</script>
+</html>

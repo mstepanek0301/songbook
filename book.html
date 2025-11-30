@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<main id="contents"></main>
+</body>
+<script src="common.js"></script>
+<script>
+	var id = getQueryParameter("id");
+	if (id === undefined || !validateId(id)) location.href = "books.html";
+	var bookHead = localStorage.getItem("sbBookHead" + id);
+	if (bookHead === null) location.href = "books.html";
+	bookHead = JSON.parse(bookHead);
+	var bookContent = localStorage.getItem("sbBookContent" + id);
+
+	document.title = (bookHead.title || "Untitled book") + " | Songbook";
+
+	var output = [];
+	writeTagText(output, "h1", bookHead.title || "Untitled");
+	output.push("<a class=\"button\" href=\"edit-book.html?id=" + id + "\">");
+		writeText(output, "Edit");
+	writeCloseTag(output, "a");
+
+	writeOpenTag(output, "ul");
+	var input = {buffer: bookContent, index: 0};
+	var songList = [];
+	var songs = {};
+	for (var id = readUntil(input, " "); id; id = readUntil(input, " ")) {
+		songs[id] = JSON.parse(localStorage.getItem("sbSongHead" + id));
+		songList.push(id);
+	}
+	songList.sort(function(a, b) {
+		return compareStrings(songs[a].title, songs[b].title)
+			|| compareStrings(songs[a].artist, songs[b].artist);
+	});
+
+	for (var i = 0; i < songList.length; i++) {
+		var id = songList[i];
+		var song = songs[id];
+		writeOpenTag(output, "li");
+			writeOpenTagAttr(output, "a", "href", "song.html?id=" + id);
+				writeText(output, song.title || "Untitled");
+				writeOpenTag(output, "br");
+				if (song.artist) writeTagText(output, "small", song.artist);
+			writeCloseTag(output, "a");
+		writeCloseTag(output, "li");
+	}
+	writeCloseTag(output, "ul");
+
+	document.getElementById("contents").innerHTML = output.join("");
+</script>
+</html>

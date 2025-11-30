@@ -1,0 +1,573 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<style>
+		.chord {
+			display: inline-block;
+			margin-right: 5px;
+			background-color: #f9c1a1;
+			padding: 0.3em 0.6em;
+			border-radius: 16px;
+			margin-top: 3px;
+			margin-bottom: 3px;
+		}
+
+		.float {
+			vertical-align: 130%;
+		}
+
+		.sep {
+			display: inline-block;
+		}
+
+		h2 {
+			font-weight: normal;
+			font-size: small;
+			color: #967a6a;
+			margin-bottom: 0;
+		}
+
+		.section {
+			margin-top: 0;
+		}
+
+		h2, .section {
+			text-align: left;
+			max-width: 400px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		.note {
+			color: #967a6a;
+		}
+
+		hgroup {
+			margin-top: 3em;
+			margin-bottom: 1em;
+		}
+
+		hgroup h1, hgroup p {
+			margin-top: 0.2em;
+			margin-bottom: 0.2em;
+		}
+
+		.rtl h2, .rtl .section {
+			text-align: right;
+		}
+
+		.rtl .section {
+			direction: rtl;
+		}
+
+		.rtl .chord {
+			margin-right: 0;
+			margin-left: 5px;
+		}
+
+		sup {
+			line-height: 0;
+		}
+
+		table {
+			/*margin: auto;*/
+			border-collapse: collapse;
+		}
+
+		.table-wrapper {
+			margin: 1em 0;
+		}
+
+		.table-scroll-wrapper {
+			overflow-x: auto;
+			border-radius: 1.25em;
+		}
+
+		.table-inner-wrapper {
+			display: inline-block;
+			margin: 0 auto;
+			padding: 0.5em 0.8em;
+			border-radius: 1.25em;
+			background-color: #f9c1a1;
+		}
+
+		.caption {
+			margin: 5px 0;
+		}
+
+		th, td {
+			padding: 2px 5px;
+		}
+
+		.tab th, .bar {
+			border-right: 2px solid #301404;
+			padding-right: 10px;
+		}
+
+		.bar-before {
+			padding-left: 10px;
+		}
+
+		.tab tr {
+			background: linear-gradient(
+				to bottom, transparent 50%, #301404 50%, #301404 55%, transparent 55%
+			);
+			background-position: bottom;
+		}
+
+		.tab span {
+			background-color: #f9c1a1;
+			padding: 0 1px;
+		}
+
+		.chord-diagram-wrapper {
+			display: inline-block;
+			padding: 0.5em 0.8em;
+			border-radius: 1.25em;
+			background-color: #f9c1a1;
+		}
+
+		.chords {
+			margin: 1em auto;
+			overflow-x: auto;
+			max-width: 900px;
+		}
+
+		#contents {
+			-webkit-user-select: text;
+			user-select: text;
+		}
+
+		.button {
+			-webkit-user-select: none;
+			user-select: none;
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<div id="contents"></div>
+</body>
+<script src="common.js"></script>
+<script>
+	var id = getQueryParameter("id");
+	if (id === undefined || !validateId(id)) location.href = "index.html";
+	var songHead = localStorage.getItem("sbSongHead" + id);
+	if (songHead === null) location.href = "index.html";
+	songHead = JSON.parse(songHead);
+	var songSettings = JSON.parse(localStorage.getItem("sbSongSettings" + id));
+	var songContent = localStorage.getItem("sbSongContent" + id);
+
+	var input = {buffer: songContent, index: 0};
+	var output = [];
+
+	writeOpenTag(output, "hgroup");
+		writeTagText(output, "h1", songHead.title || "Untitled");
+		if (songHead.artist) writeTagText(output, "p", songHead.artist);
+	writeCloseTag(output, "hgroup");
+
+	output.push("<a class=\"button\" href=\"edit.html?id=" + id + "\">");
+		writeText(output, "Edit");
+	writeCloseTag(output, "a");
+
+	document.title = songHead.title + " | Songbook";
+
+	if (songSettings.dir === "rtl")
+		document.getElementById("contents").setAttribute("class", "rtl");
+
+	function readString(input, string) {
+		for (var i = 0; i < string.length; i++) {
+			if (input.buffer[input.index + i] !== string[i]) return false;
+		}
+		input.index += string.length;
+		return true;
+	}
+
+	function isDigit(char) {
+		var charCode = char.charCodeAt(0);
+		return 48 <= charCode && charCode < 58;
+	}
+
+	function peekChar(input) {
+		return input.buffer[input.index];
+	}
+
+	function readChar(input) {
+		return input.buffer[input.index++];
+	}
+
+	function readSpaces(input) {
+		while (readString(input, " ")) {}
+	}
+
+	function readWhitespace(input) {
+		while (peekChar(input) === " " || peekChar(input) === "\n") input.index++;
+	}
+
+	function readEndOfLine(input) {
+		if (endOfInput(input)) return true;
+		return readString(input, "\n");
+	}
+
+	function readEndOfWord(input) {
+		if (endOfInput(input)) return true;
+		if (peekChar(input) === "\n") return true;
+		return readString(input, " ");
+	}
+
+	function readEndOfGroup(input) {
+		return endOfInput(input) || peekChar(input) === "\n" || readString(input, "]");
+	}
+
+	function readBlockCommand(input, command) {
+		var originalIndex = input.index;
+		if (!(readString(input, "@") && readString(input, command) && readEndOfLine(input))) {
+			input.index = originalIndex;
+			return false;
+		}
+		return true;
+	}
+
+	function readBlockCommandParam(input, command) {
+		var originalIndex = input.index;
+		if (!(readString(input, "@") && readString(input, command) && readEndOfWord(input))) {
+			input.index = originalIndex;
+			return null;
+		}
+		return true;
+	}
+
+	function readInlineCommand(input, command) {
+		var originalIndex = input.index;
+		if (!(readString(input, "@") && readString(input, command)
+			&& (readEndOfWord(input) || readString("]"))
+		)) {
+			input.index = originalIndex;
+			return null;
+		}
+		return true;
+	}
+
+	function readNote(input) {
+		var note = peekChar(input).toUpperCase();
+		if (note in notesToNumbers) {
+			readChar(input);
+			var noteNumber = notesToNumbers[note];
+			if (readString(input, "#")) noteNumber = mod(noteNumber + 1, 12);
+			else if (readString(input, "b")) noteNumber = mod(noteNumber - 1, 12);
+			return noteNumber;
+		}
+		return null;
+	}
+
+	function parseChord(delim) {
+		var note = readNote(input);
+		if (note === null) writeText(output, "?");
+		else {
+			writeOpenTagAttr(output, "span", "class", "note-" + note.toString());
+			writeText(output, numbersToNotes[note]);
+			writeCloseTag(output, "span");
+		}
+		var openNumber = false;
+		while (!(endOfInput(input) || peekChar(input) === "\n" || readString(input, delim))) {
+			if (!openNumber && isDigit(peekChar(input))) {
+				writeOpenTag(output, "sup");
+				openNumber = true;
+			}
+			if (openNumber && !isDigit(peekChar(input))) {
+				writeCloseTag(output, "sup");
+				openNumber = false;
+			}
+			parseChar(input, output);
+		}
+		readSpaces(input);
+	}
+
+	function textAfterChord() {
+		if (lastSeenChord) {
+			writeOpenTagAttr(output, "span", "class", "sep");
+			writeCloseTag(output, "span");
+			writeOpenTagAttr(output, "span", "class", "text");
+			openText = true;
+			lastSeenChord = false;
+			lineNeedsLayout = true;
+		}
+	}
+
+	function closeText() {
+		if (openText) {
+			writeCloseTag(output, "span");
+			openText = false;
+		}
+	}
+
+	function parseChar(input, output) {
+		if (readString(input, "...")) output.push("&hellip;");
+		else writeText(output, readChar(input));
+	}
+
+	function readTabSpaces(input) {
+		readSpaces(input);
+		readEndOfLine(input);
+		readSpaces(input);
+	}
+
+	var notesToNumbers = {
+		"A": 0, "B": 2, "C": 3, "D": 5, "E": 7, "F": 8, "G": 10,
+	};
+	if (songSettings.scale === "h") {
+		notesToNumbers["B"] = 1;
+		notesToNumbers["H"] = 2;
+	}
+
+	function mod(a, b) {
+		return (a % b + b) % b;
+	}
+	var numbersToNotes = {
+		0: "A", 2: settings.scale === "h" ? "H" : "B", 3: "C", 5: "D", 7: "E", 8: "F", 10: "G",
+	};
+	for (var i = 0; i < 12; i++) {
+		if (i in numbersToNotes) continue;
+		var shift = settings["note-" + i.toString()];
+		if (shift === "sharp") numbersToNotes[i] = numbersToNotes[mod(i - 1, 12)] + "\u266f";
+		else numbersToNotes[i] = numbersToNotes[mod(i + 1, 12)] + "\u266d";
+	}
+	if (settings.scale === "h" && settings["note-1"] === "flat") numbersToNotes[1] = "B";
+
+	var verseCounter = 1;
+	var currentLabel = null;
+	var savedSections = {};
+	var sectionTypes = {
+		"chorus": "Chorus",
+		"prechorus": "Pre-chorus",
+		"bridge": "Bridge",
+		"interlude": "Interlude",
+		"intro": "Intro",
+		"outro": "Outro",
+	}
+	var linesNeedLayout = [];
+
+	var tuning = [];
+	var tuningInput = {buffer: songSettings.tuning, index: 0};
+	while (!endOfInput(tuningInput)) {
+		var note = readNote(tuningInput);
+		tuning.push(note);
+		readSpaces(tuningInput);
+	}
+
+	readWhitespace(input);
+	while (!endOfInput(input)) {
+		if (readBlockCommandParam(input, "tab")) {
+			var caption = readUntil(input, "\n");
+			var tab = [];
+			var bars = {};
+			var string = 0;
+			var openGroup = false;
+			while (!readEndOfLine(input)) {
+				if (!openGroup) tab.push(Array(tuning.length));
+				if (readString(input, "[")) openGroup = true;
+				var word = [];
+				var note = Array(tuning.length);
+				while (!readEndOfWord(input)) {
+					if (readString(input, "]")) {
+						readTabSpaces(input);
+						openGroup = false;
+						break;
+					}
+					if (readString(input, ":")) {
+						string = parseInt(word.join("")) - 1;
+						word = [];
+						continue;
+					}
+					parseChar(input, word);
+				}
+				if (!openGroup && readString(input, "|")) {
+					readTabSpaces(input);
+					bars[tab.length - 1] = true;
+				}
+				if (word.length > 0) {
+					tab[tab.length - 1][string] = word.join("");
+					if (openGroup) string++;
+				}
+			}
+			writeOpenTagAttr(output, "div", "class", "table-wrapper");
+				writeOpenTagAttr(output, "p", "class", "caption");
+					writeText(output, caption);
+				writeCloseTag(output, "p");
+				writeOpenTagAttr(output, "div", "class", "table-scroll-wrapper");
+					writeOpenTagAttr(output, "div", "class", "table-inner-wrapper");
+						writeOpenTagAttr(output, "table", "class", "tab");
+						for (var row = tuning.length - 1; row >= 0; row--) {
+							writeOpenTag(output, "tr");
+							writeOpenTag(output, "th");
+								writeTagText(output, "span", numbersToNotes[tuning[row]]);
+							writeCloseTag(output, "th");
+							for (var col = 0; col < tab.length; col++) {
+								var classes = [];
+								if (bars[col - 1] || col === 0) classes.push("bar-before");
+								if (bars[col]) classes.push("bar");
+								output.push("<td");
+								if (classes.length > 0)
+									output.push(" class=\"" + classes.join(" ") + "\"");
+								output.push(">");
+								if (tab[col][row]) writeTagText(output, "span", tab[col][row]);
+								writeCloseTag(output, "td");
+							}
+							writeCloseTag(output, "tr");
+						}
+						writeCloseTag(output, "table");
+					writeCloseTag(output, "div");
+				writeCloseTag(output, "div");
+			writeCloseTag(output, "div");
+		}
+		else if (readBlockCommand(input, "chords")) {
+			writeOpenTagAttr(output, "div", "class", "chords");
+			while (!readEndOfLine(input)) {
+				writeOpenTagAttr(output, "div", "class", "chord-diagram-wrapper");
+					writeOpenTagAttr(output, "table", "class", "chord-diagram");
+						writeOpenTag(output, "caption");
+							parseChord(":");
+						writeCloseTag(output, "caption");
+						writeOpenTag(output, "thead");
+							for (var i = 0; i < tuning.length; i++)
+								writeTagText(output, "th", numbersToNotes[tuning[i]]);
+						writeCloseTag(output, "thead");
+						writeOpenTag(output, "tbody");
+							writeOpenTag(output, "tr");
+								for (var i = 0; i < tuning.length; i++) {
+									writeOpenTag(output, "td");
+									while (!readEndOfWord(input)) parseChar(input, output);
+									writeCloseTag(output, "td");
+								}
+								readUntil(input, "\n");
+							writeCloseTag(output, "tr");
+						writeCloseTag(output, "tbody");
+					writeCloseTag(output, "table");
+				writeCloseTag(output, "div");
+				writeText(output, " ");
+			}
+			writeCloseTag(output, "div");
+		}
+		else if (readBlockCommandParam(input, "repeat")) {
+			var label = readUntil(input, "\n");
+			if (label in savedSections)
+				for (var i = savedSections[label].start; i < savedSections[label].end; i++)
+					output.push(output[i]);
+		}
+		else {
+			var sectionStart = output.length;
+			if (readBlockCommandParam(input, "section")) {
+				var sectionName = readUntil(input, "\n");
+				writeTagText(output, "h2", sectionName);
+				currentLabel = sectionName;
+			}
+			else if (readBlockCommand(input, "verse")) {
+				writeTagText(output, "h2", "Verse " + (verseCounter++).toString());
+			}
+			else for (var type in sectionTypes) {
+				if (readBlockCommand(input, type)) {
+					writeTagText(output, "h2", sectionTypes[type]);
+					currentLabel = type;
+					break;
+				}
+			}
+
+			if (readBlockCommandParam(input, "label")) {
+				currentLabel = readUntil(input, "\n");
+			}
+			if (currentLabel) savedSections[currentLabel] = {start: sectionStart};
+			var lineNeedsLayout = false, lastSeenChord = false, openText = false;
+			writeOpenTagAttr(output, "p", "class", "section");
+			while (true) {
+				if (readEndOfLine(input)) {
+					closeText();
+					linesNeedLayout.push(lineNeedsLayout);
+					lineNeedsLayout = false;
+					lastSeenChord = false;
+					if (readEndOfLine(input)) break;
+					writeOpenTag(output, "br");
+				}
+				else if (readString(input, "[")) {
+					readSpaces(input);
+					if (readInlineCommand(input, "note")) {
+						writeOpenTagAttr(output, "span", "class", "note");
+						while (!readEndOfGroup(input)) parseChar(input, output);
+						writeCloseTag(output, "span");
+					}
+					else if (readInlineCommand(input, "ital")) {
+						textAfterChord();
+						writeOpenTag(output, "i");
+						while (!readEndOfGroup(input)) parseChar(input, output);
+						writeCloseTag(output, "i");
+					}
+					else {
+						closeText();
+						writeOpenTagAttr(output, "span", "class", "chord");
+						writeText(output, "\u200b");
+						parseChord("]");
+						writeText(output, "\u200b");
+						writeCloseTag(output, "span");
+						lastSeenChord = true;
+					}
+				}
+				else {
+					textAfterChord();
+					parseChar(input, output);
+				}
+			}
+			writeCloseTag(output, "p");
+		}
+		if (currentLabel) savedSections[currentLabel].end = output.length;
+		readWhitespace(input);
+	}
+
+	var contents = document.getElementById("contents")
+	contents.innerHTML = output.join("");
+
+	function getWidth(elem) {
+		var rects = elem.getClientRects();
+		if (rects.length > 1) return null;
+		return rects[0].right - rects[0].left;
+	}
+
+	function setRightMargin(elem, pixels) {
+		elem.setAttribute("style", [
+			"margin-", songSettings.dir === "rtl" ? "left" : "right", ":",
+			pixels.toString(), "px",
+		].join(""));
+	}
+
+	var lineNumber = 0;
+	for (var section = contents.firstChild; section !== null; section = section.nextSibling) {
+		if (section.className !== "section") continue;
+		var chordLength = 0;
+		for (var elem = section.firstChild; elem !== null; elem = elem.nextSibling) {
+			if (elem.tagName === "BR") lineNumber++;
+			else if (!linesNeedLayout[lineNumber]) {}
+			else if (elem.className === "chord") {
+				elem.setAttribute("class", "chord float");
+				chordWidth = getWidth(elem) + 5; // including margin
+			}
+			else if (elem.className === "sep")
+				setRightMargin(elem, -chordWidth);
+			else if (elem.className === "text") {
+				var width = getWidth(elem);
+				if (width < chordWidth) setRightMargin(elem, chordWidth - width);
+			}
+		}
+		lineNumber++;
+	}
+</script>
+</html>

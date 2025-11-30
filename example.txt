@@ -1,0 +1,84 @@
+@chords
+C#m: - 4 6 6 5 -
+B: 7 9 9 8 7 -
+E: - 7 9 9 9 -
+
+@intro
+[C#m] [B] [E]
+
+@verse
+[C#m]Tuesday morning comes along
+I [C#m] read the news it's all gone [B]wrong
+The [E]facts of life have left too soon
+Serving up doom and gloom
+Never gonna leave my room
+
+---
+
+@verse
+Máš [Gm]sladký dech a oči, kterým [F]patří svatozář,
+a [Eb]vlasy máš jak hedvábí, když je [D7]hodíš na polštář.
+Ale já se o tvou lásku ani vděčnost neprosím,
+ty děkuješ jen hvězdám a seš věrná jenom jim.
+
+@chorus
+[Eb]Ještě jedno kafe bych si [D7]dal,
+ještě jedno kafe, krucinál,
+než pojedu dál... [@note 2x]
+
+[A][B][@note 2x]
+
+@tab Přehrávka
+4:2 3 | 5:4 3
+
+@tab Akordy
+[1 2 3 4 5 6] | [1:1 2 3 6: 6] [2: 2 3 4]
+
+@tab niečo fakt dlhé
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 | 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+---
+
+@verse
+ו[Em]מה תבק[Bm]שי א[C]חות
+חרש [Bm]לג[Am7]לות
+נעו[Bm]לות פ [C]נייך [D]
+אבל מתוכן עינייך קורצות רומזות
+שדבר מה על ליבך
+
+בעוד אין לי אשת סוד
+מלבדך ואיך השתנו דרכינו
+מוטב תיזרק מילה משפתך
+כי השקט הזה מדבק
+
+@prechorus
+וזה עוזר גם אם זה לא חוזר
+לשבת ככה לדבר
+על קצה של איזו מדרכה
+לשוב להיזכר
+
+@chorus
+שלא הייתי ככה פעם
+אבודה ועצבנית
+ואם היה בכל זה טעם הוא נדחק עם השנים
+ולא הייתי ככה פעם
+מעזה להפתח
+ואם היה בכל זאת טעם
+הוא נשאר איתך
+
+@verse
+ואיך נשמטה דרכי
+פתע מידי
+התפזרה אל ימים אחרים
+גיטרה שלא היתה
+לא היתה לי
+השאירה בי אלף שירים
+
+@prechorus
+וזה עוזר
+גם אם זה לא יכול את השקט להחזיר
+כשכוכבים מעל העיר
+דולקים כדי להזכיר
+
+@repeat chorus

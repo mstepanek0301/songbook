@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<title>Edit song | Songbook</title>
+	<style>
+		textarea {
+			display: block;
+			max-width: 100%;
+			resize: none;
+			margin: 0.5em auto;
+			height: 20em;
+			padding: 0.5em 0.8em 0.8em;
+		}
+
+		@supports (field-sizing: content) {
+			textarea {
+				height: auto;
+				width: 40em;
+				field-sizing: content;
+				min-height: 20em;
+			}
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<h1>Edit song</h1>
+	<a id="done" class="button">Done</a>
+	<label>Title <input id="title"></label>
+	<label>Artist <input id="artist"></label>
+	<details>
+		<summary>More options</summary>
+		<label>Scale <select id="scale">
+			<option value="b">CDEFGABC</option>
+			<option value="h">CDEFGAHC</option>
+		</select></label>
+		<label>Tuning <input id="tuning"></label>
+		<label>Capo <input id="capo" type="number"></label>
+		<label>Text direction <select oninput="updateDir(this.value)" id="dir">
+			<option value="ltr">Left-to-right</option>
+			<option value="rtl">Right-to-left</option>
+		</select></label>
+		<button onclick="deleteSong()">Delete song</button>
+	</details>
+	<label>Song contents <textarea cols="60" id="content"></textarea></label>
+</body>
+<script src="common.js"></script>
+<script>
+	var id = getQueryParameter("id");
+	if (id === undefined || !validateId(id)) location.href = "index.html";
+	var songHead = localStorage.getItem("sbSongHead" + id);
+	if (songHead === null) location.href = "index.html";
+	songHead = JSON.parse(songHead);
+	var songSettings = JSON.parse(localStorage.getItem("sbSongSettings" + id));
+	var songContent = localStorage.getItem("sbSongContent" + id);
+	var saved = false;
+	var deleted = false;
+
+	function getValue(elem) {
+		return document.getElementById(elem).value;
+	}
+	function loadValue(prop, value) {
+		document.getElementById(prop).value = value;
+	}
+	loadValue("title", songHead["title"]);
+	loadValue("artist", songHead["artist"]);
+	loadValue("scale", songSettings["scale"] || settings.scale);
+	loadValue("tuning", songSettings["tuning"] || settings.tuning);
+	loadValue("capo", songSettings["capo"] || "0");
+	loadValue("dir", songSettings["dir"] || settings.dir);
+	loadValue("content", songContent);
+
+	document.getElementById("done").href = "song.html?id=" + id;
+
+	function unsave() {
+		saved = false;
+	}
+	function save() {
+		if (saved || deleted) return;
+		localStorage.setItem("sbSongHead" + id, JSON.stringify({
+			title: getValue("title"),
+			artist: getValue("artist"),
+			dateModified: Date.now(),
+			dateCreated: songHead.dateCreated,
+		}));
+		localStorage.setItem("sbSongSettings" + id, JSON.stringify({
+			scale: getValue("scale"),
+			tuning: getValue("tuning"),
+			capo: getValue("capo"),
+			dir: getValue("dir"),
+		}));
+		localStorage.setItem("sbSongContent" + id, getValue("content"));
+	}
+	setupSaving(save, unsave);
+
+	function deleteSong() {
+		if (prompt(
+			"Are you sure you want to delete the song \""
+			+ (document.getElementById("title").value || "Untitled")
+			+ "\"? (OK or Cancel)"
+		) === null) return;
+		localStorage.removeItem("sbSongHead" + id);
+		localStorage.removeItem("sbSongSettings" + id);
+		localStorage.removeItem("sbSongContent" + id);
+		deleted = true;
+		location.href = "index.html";
+	}
+
+	function updateDir(value) {
+		document.getElementById("content").dir = value;
+	}
+	updateDir(songSettings.dir);
+</script>
+</html>

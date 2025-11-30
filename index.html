@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<title>Songbook</title>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<h1>Songs</h1>
+	<div class="buttons">
+		<button onclick="newSong()">New song</button>
+	</div>
+	<label>
+		Search
+		<input type="search" oninput="showSongsFilteredBy(this.value)">
+	</label>
+	<ul id="songs"></ul>
+</body>
+<script src="common.js"></script>
+<script>
+	var songCount = parseInt(localStorage.getItem("sbSongCount") || "0");
+	var songs = {}, ids = [];
+	for (var id = 0; id < songCount; id++) {
+		var saved = localStorage.getItem("sbSongHead" + id.toString());
+		if (!saved) continue;
+		songs[id] = JSON.parse(saved);
+		ids.push(id);
+	}
+
+	var sortFunctions = {
+		"title": function(a, b) {
+			return compareStrings(songs[a].title, songs[b].title)
+				|| compareStrings(songs[a].artist || "", songs[b].artist || "");
+		},
+		"artist": function(a, b) {
+			return compareStrings(songs[a].artist || "", songs[b].artist || "")
+				|| compareStrings(songs[a].title, songs[b].title);
+		},
+		"date-modified": function(a, b) {
+			return songs[b].dateModified - songs[a].dateModified;
+		},
+		"date-created": function(a, b) {
+			return songs[b].dateCreated - songs[a].dateCreated;
+		},
+	};
+	ids.sort(sortFunctions[settings["sort-songs-by"]]);
+
+	function matches(song, query) {
+		return song.title.toLowerCase().indexOf(query.toLowerCase()) !== -1;
+	}
+	function showSongsFilteredBy(query) {
+		var out = [];
+		for (var i = 0; i < ids.length; i++) {
+			var song = songs[ids[i]];
+			if (!matches(song, query)) continue;
+			writeOpenTag(out, "li");
+				writeOpenTagAttr(out, "a", "href", "song.html?id=" + ids[i].toString());
+					writeText(out, song.title || "Untitled");
+					writeOpenTag(out, "br");
+					if (song.artist) writeTagText(out, "small", song.artist);
+				writeCloseTag(out, "a");
+			writeCloseTag(out, "li");
+		}
+		document.getElementById("songs").innerHTML = out.join("");
+	}
+	showSongsFilteredBy("");
+
+	function newSong() {
+		var id = songCount.toString();
+		var date = Date.now();
+		localStorage.setItem("sbSongHead" + id, JSON.stringify({
+			title: "", artist: "", dateModified: date, dateCreated: date,
+		}));
+		localStorage.setItem("sbSongSettings" + id, "{}");
+		localStorage.setItem("sbSongContent" + id, "");
+		localStorage.setItem("sbSongCount", (songCount + 1).toString());
+		location.href = "edit.html?id=" + id;
+	}
+
+	function tortureTest(n) {
+		localStorage.setItem("sbSongCount", n.toString());
+		for (var i = 0; i < n; i++) {
+			localStorage.setItem("sbSongHead" + i.toString(), JSON.stringify({
+				title: "Test " + i.toString(),
+				artist: "",
+				dateModified: Date.now(),
+				dateCreated: Date.now(),
+			}));
+		}
+	}
+</script>
+</html>

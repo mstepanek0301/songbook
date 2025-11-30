@@ -1,0 +1,13 @@
+- manual for writing songs
+- custom order of songs in books
+- files
+	- import and export songs and books
+	- backup/restore all data
+- style
+	- dark theme support
+	- animations
+- clean up
+	- edit-book.html
+	- CSS
+	- optimize when you have many songs
+- translate the app to other languages

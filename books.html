@@ -1,0 +1,83 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="common.css">
+	<link rel="icon" href="favicon.ico" sizes="32x32">
+	<link rel="icon" href="icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-apple-touch.png">
+	<link rel="manifest" href="app.webmanifest">
+	<title>Books | Songbook</title>
+</head>
+<body>
+	<header>
+		<p>Songbook (beta)</p>
+		<a href="index.html">Songs</a>
+		<a href="books.html">Books</a>
+		<a href="settings.html">Settings</a>
+	</header>
+	<h1>Books</h1>
+	<div class="buttons">
+		<button onclick="newBook()">New book</button>
+	</div>
+	<label>
+		Search
+		<input type="search" oninput="showBooksFilteredBy(this.value)">
+	</label>
+	<ul id="books"></ul>
+</body>
+<script src="common.js"></script>
+<script>
+	var bookCount = parseInt(localStorage.getItem("sbBookCount") || "0");
+	var books = {}, ids = [];
+	for (var id = 0; id < bookCount; id++) {
+		var saved = localStorage.getItem("sbBookHead" + id.toString());
+		if (!saved) continue;
+		books[id] = JSON.parse(saved);
+		ids.push(id);
+	}
+
+	var sortFunctions = {
+		"title": function(a, b) {
+			return compareStrings(books[a].title, books[b].title);
+		},
+		"date-modified": function(a, b) {
+			return books[b].dateModified - books[a].dateModified;
+		},
+		"date-created": function(a, b) {
+			return books[b].dateCreated - books[a].dateCreated;
+		},
+	};
+	ids.sort(sortFunctions[settings["sort-books-by"]]);
+
+	function matches(book, query) {
+		return book.title.toLowerCase().indexOf(query.toLowerCase()) !== -1;
+	}
+	function showBooksFilteredBy(query) {
+		var out = [];
+		for (var i = 0; i < ids.length; i++) {
+			var book = books[ids[i]];
+			if (!matches(book, query)) continue;
+			writeOpenTag(out, "li");
+				writeOpenTagAttr(out, "a", "href", "book.html?id=" + ids[i].toString());
+					writeText(out, book.title || "Untitled");
+				writeCloseTag(out, "a");
+			writeCloseTag(out, "li");
+		}
+		document.getElementById("books").innerHTML = out.join("");
+	}
+	showBooksFilteredBy("");
+
+	function newBook() {
+		var id = bookCount.toString();
+		var date = Date.now();
+		localStorage.setItem("sbBookHead" + id, JSON.stringify({
+			title: "", dateModified: date, dateCreated: date,
+		}));
+		localStorage.setItem("sbBookContent" + id, "");
+		localStorage.setItem("sbBookCount", (bookCount + 1).toString());
+		location.href = "edit-book.html?id=" + id;
+	}
+</script>
+</html>

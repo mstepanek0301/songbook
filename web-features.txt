@@ -1,0 +1,26 @@
+HTML
+	header, hgroup, main |
+	details/summary      |
+	label, small         | optional
+	input, textarea
+	table, tr, td, thead, caption
+
+CSS
+	float
+	min-width, min-height
+	vertical-align
+	:first/last/only-child
+	user-select (optional)
+JS:
+	Number.toString
+	String.indexOf
+	localStorage.getItem, .setItem, .removeItem
+	JSON.parse, .stringify
+
+APIs:
+	events: pageshow/hide, visibilitychange, beforeunload (any one of them)
+	localStorage.getItem, .setItem, .removeItem
+	Date.now()
+	Node.firstChild, .nextSibling
+	serviceWorker (optional)
+	prompt
