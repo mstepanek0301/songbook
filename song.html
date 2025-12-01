@@ -3,6 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#fce0d0">
+	<meta name="theme-color" content="#301404" media="(prefers-color-scheme: dark)">
 	<link rel="stylesheet" href="common.css">
 	<link rel="icon" href="favicon.ico" sizes="32x32">
 	<link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -31,7 +33,7 @@
 			font-weight: normal;
 			font-size: small;
 			color: #967a6a;
-			margin-bottom: 0;
+			margin-bottom: 0.2em;
 		}
 
 		.section {
@@ -45,7 +47,7 @@
 			margin-right: auto;
 		}
 
-		.note {
+		.note, .capo {
 			color: #967a6a;
 		}
 
@@ -149,6 +151,23 @@
 			-webkit-user-select: none;
 			user-select: none;
 		}
+
+		@media (prefers-color-scheme: dark) {
+			.chord, .table-inner-wrapper, .tab span, .chord-diagram-wrapper {
+				background-color: #602808;
+			}
+			h2, .note, .capo {
+				color: #967a6a;
+			}
+			.tab tr {
+				background: linear-gradient(
+					to bottom, transparent 50%, #fce0d0 50%, #fce0d0 55%, transparent 55%
+				);
+			}
+			.tab th, .bar {
+				border-right: 2px solid #fce0d0;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -181,6 +200,12 @@
 	output.push("<a class=\"button\" href=\"edit.html?id=" + id + "\">");
 		writeText(output, "Edit");
 	writeCloseTag(output, "a");
+
+	if (songSettings.capo && songSettings.capo !== "0") {
+		writeOpenTagAttr(output, "p", "class", "capo");
+			writeText(output, "Capo " + songSettings.capo);
+		writeCloseTag(output, "p");
+	}
 
 	document.title = songHead.title + " | Songbook";
 
@@ -277,7 +302,7 @@
 		if (note === null) writeText(output, "?");
 		else {
 			writeOpenTagAttr(output, "span", "class", "note-" + note.toString());
-			writeText(output, numbersToNotes[note]);
+			output.push(numbersToNotes[note]);
 			writeCloseTag(output, "span");
 		}
 		var openNumber = false;
@@ -324,6 +349,12 @@
 		readSpaces(input);
 	}
 
+	function repeatRange(array, start, end) {
+		for (var i = start; i < end; i++) {
+			array.push(array[i]);
+		}
+	}
+
 	var notesToNumbers = {
 		"A": 0, "B": 2, "C": 3, "D": 5, "E": 7, "F": 8, "G": 10,
 	};
@@ -338,11 +369,12 @@
 	var numbersToNotes = {
 		0: "A", 2: settings.scale === "h" ? "H" : "B", 3: "C", 5: "D", 7: "E", 8: "F", 10: "G",
 	};
+	var sharp = "<span class=\"lh0\">\u266f</span>", flat = "<span class=\"lh0\">\u266d</span>";
 	for (var i = 0; i < 12; i++) {
 		if (i in numbersToNotes) continue;
 		var shift = settings["note-" + i.toString()];
-		if (shift === "sharp") numbersToNotes[i] = numbersToNotes[mod(i - 1, 12)] + "\u266f";
-		else numbersToNotes[i] = numbersToNotes[mod(i + 1, 12)] + "\u266d";
+		if (shift === "sharp") numbersToNotes[i] = numbersToNotes[mod(i - 1, 12)] + sharp;
+		else numbersToNotes[i] = numbersToNotes[mod(i + 1, 12)] + flat;
 	}
 	if (settings.scale === "h" && settings["note-1"] === "flat") numbersToNotes[1] = "B";
 
@@ -462,9 +494,10 @@
 		}
 		else if (readBlockCommandParam(input, "repeat")) {
 			var label = readUntil(input, "\n");
-			if (label in savedSections)
-				for (var i = savedSections[label].start; i < savedSections[label].end; i++)
-					output.push(output[i]);
+			if (label in savedSections) {
+				repeatRange(output, savedSections[label].start, savedSections[label].end);
+				repeatRange(linesNeedLayout, savedSections[label].lineStart, savedSections[label].lineEnd);
+			}
 		}
 		else {
 			var sectionStart = output.length;
@@ -487,7 +520,10 @@
 			if (readBlockCommandParam(input, "label")) {
 				currentLabel = readUntil(input, "\n");
 			}
-			if (currentLabel) savedSections[currentLabel] = {start: sectionStart};
+			if (currentLabel) savedSections[currentLabel] = {
+				start: sectionStart,
+				lineStart: linesNeedLayout.length,
+			};
 			var lineNeedsLayout = false, lastSeenChord = false, openText = false;
 			writeOpenTagAttr(output, "p", "class", "section");
 			while (true) {
@@ -528,8 +564,11 @@
 				}
 			}
 			writeCloseTag(output, "p");
+			if (currentLabel) {
+				savedSections[currentLabel].end = output.length;
+				savedSections[currentLabel].lineEnd = linesNeedLayout.length;
+			}
 		}
-		if (currentLabel) savedSections[currentLabel].end = output.length;
 		readWhitespace(input);
 	}
 

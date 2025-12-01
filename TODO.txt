@@ -4,7 +4,6 @@
 	- import and export songs and books
 	- backup/restore all data
 - style
-	- dark theme support
 	- animations
 - clean up
 	- edit-book.html
