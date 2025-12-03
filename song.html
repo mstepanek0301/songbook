@@ -116,9 +116,8 @@
 
 		.tab tr {
 			background: linear-gradient(
-				to bottom, transparent 50%, #301404 50%, #301404 55%, transparent 55%
+				to bottom, transparent 48%, #301404 48%, #301404 53%, transparent 53%
 			);
-			background-position: bottom;
 		}
 
 		.tab span {
@@ -231,7 +230,9 @@
 	}
 
 	function readSpaces(input) {
+		if (!readString(input, " ")) return false;
 		while (readString(input, " ")) {}
+		return true;
 	}
 
 	function readWhitespace(input) {
@@ -246,7 +247,7 @@
 	function readEndOfWord(input) {
 		if (endOfInput(input)) return true;
 		if (peekChar(input) === "\n") return true;
-		return readString(input, " ");
+		return readSpaces(input);
 	}
 
 	function readEndOfGroup(input) {
@@ -274,7 +275,7 @@
 	function readInlineCommand(input, command) {
 		var originalIndex = input.index;
 		if (!(readString(input, "@") && readString(input, command)
-			&& (readEndOfWord(input) || readString("]"))
+			&& (readEndOfWord(input) || readString(input, "]"))
 		)) {
 			input.index = originalIndex;
 			return null;
@@ -340,10 +341,11 @@
 		else writeText(output, readChar(input));
 	}
 
-	function readTabSpaces(input) {
-		readSpaces(input);
+	function readTabEndOfWord(input) {
+		if (!(readEndOfWord(input) || peekChar(input) === "|")) return false;
 		readEndOfLine(input);
 		readSpaces(input);
+		return true;
 	}
 
 	function repeatRange(array, start, end) {
@@ -408,11 +410,10 @@
 				if (!openGroup) tab.push(Array(tuning.length));
 				if (readString(input, "[")) openGroup = true;
 				var word = [];
-				var note = Array(tuning.length);
-				while (!readEndOfWord(input)) {
+				while (!readTabEndOfWord(input)) {
 					if (readString(input, "]")) {
-						readTabSpaces(input);
 						openGroup = false;
+						readTabEndOfWord(input);
 						break;
 					}
 					if (readString(input, ":")) {
@@ -423,8 +424,8 @@
 					parseChar(input, word);
 				}
 				if (!openGroup && readString(input, "|")) {
-					readTabSpaces(input);
 					bars[tab.length - 1] = true;
+					readTabEndOfWord(input);
 				}
 				if (word.length > 0) {
 					tab[tab.length - 1][string] = word.join("");
@@ -432,16 +433,18 @@
 				}
 			}
 			writeOpenTagAttr(output, "div", "class", "table-wrapper");
-				writeOpenTagAttr(output, "p", "class", "caption");
-					writeText(output, caption);
-				writeCloseTag(output, "p");
+				if (caption) {
+					writeOpenTagAttr(output, "p", "class", "caption");
+						writeText(output, caption);
+					writeCloseTag(output, "p");
+				}
 				writeOpenTagAttr(output, "div", "class", "table-scroll-wrapper");
 					writeOpenTagAttr(output, "div", "class", "table-inner-wrapper");
 						writeOpenTagAttr(output, "table", "class", "tab");
 						for (var row = tuning.length - 1; row >= 0; row--) {
 							writeOpenTag(output, "tr");
 							writeOpenTag(output, "th");
-								writeTagText(output, "span", numbersToNotes[tuning[row]]);
+								writeTagHtml(output, "span", numbersToNotes[tuning[row]]);
 							writeCloseTag(output, "th");
 							for (var col = 0; col < tab.length; col++) {
 								var classes = [];
@@ -451,7 +454,7 @@
 								if (classes.length > 0)
 									output.push(" class=\"" + classes.join(" ") + "\"");
 								output.push(">");
-								if (tab[col][row]) writeTagText(output, "span", tab[col][row]);
+								if (tab[col][row]) writeTagHtml(output, "span", tab[col][row]);
 								writeCloseTag(output, "td");
 							}
 							writeCloseTag(output, "tr");
@@ -505,6 +508,7 @@
 			}
 			else if (readBlockCommand(input, "verse")) {
 				writeTagText(output, "h2", "Verse " + (verseCounter++).toString());
+				currentLabel = null;
 			}
 			else for (var type in sectionTypes) {
 				if (readBlockCommand(input, type)) {
@@ -535,6 +539,8 @@
 				else if (readString(input, "[")) {
 					readSpaces(input);
 					if (readInlineCommand(input, "note")) {
+						lastSeenChord = false;
+						closeText();
 						writeOpenTagAttr(output, "span", "class", "note");
 						while (!readEndOfGroup(input)) parseChar(input, output);
 						writeCloseTag(output, "span");

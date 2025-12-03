@@ -101,6 +101,12 @@ function writeTagText(out, tag, text) {
 	writeCloseTag(out, tag);
 }
 
+function writeTagHtml(out, tag, html) {
+	writeOpenTag(out, tag);
+	out.push(html);
+	writeCloseTag(out, tag);
+}
+
 
 // QUERY PARAMETERS
 
