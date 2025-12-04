@@ -501,10 +501,11 @@
 		}
 		else {
 			var sectionStart = output.length;
+			var label = null;
 			if (readBlockCommandParam(input, "section")) {
 				var sectionName = readUntil(input, "\n");
 				writeTagText(output, "h2", sectionName);
-				currentLabel = sectionName;
+				label = sectionName;
 			}
 			else if (readBlockCommand(input, "verse")) {
 				writeTagText(output, "h2", "Verse " + (verseCounter++).toString());
@@ -513,18 +514,21 @@
 			else for (var type in sectionTypes) {
 				if (readBlockCommand(input, type)) {
 					writeTagText(output, "h2", sectionTypes[type]);
-					currentLabel = type;
+					label = type;
 					break;
 				}
 			}
 
 			if (readBlockCommandParam(input, "label")) {
-				currentLabel = readUntil(input, "\n");
+				label = readUntil(input, "\n");
 			}
-			if (currentLabel) savedSections[currentLabel] = {
-				start: sectionStart,
-				lineStart: linesNeedLayout.length,
-			};
+			if (label) {
+				savedSections[label] = {
+					start: sectionStart,
+					lineStart: linesNeedLayout.length,
+				};
+				currentLabel = label;
+			}
 			var lineNeedsLayout = false, lastSeenChord = false, openText = false;
 			writeOpenTagAttr(output, "p", "class", "section");
 			while (true) {
