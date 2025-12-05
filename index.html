@@ -20,6 +20,7 @@
 	<h1>Songs</h1>
 	<div class="buttons">
 		<button onclick="newSong()">New song</button>
+		<button onclick="importSong()">Open file</button>
 	</div>
 	<label>
 		Search
@@ -76,28 +77,45 @@
 	}
 	showSongsFilteredBy("");
 
-	function newSong() {
+	function addSong(head, settings, content) {
 		var id = songCount.toString();
-		var date = Date.now();
-		localStorage.setItem("sbSongHead" + id, JSON.stringify({
-			title: "", artist: "", dateModified: date, dateCreated: date,
-		}));
-		localStorage.setItem("sbSongSettings" + id, "{}");
-		localStorage.setItem("sbSongContent" + id, "");
+		localStorage.setItem("sbSongHead" + id, head);
+		localStorage.setItem("sbSongSettings" + id, settings);
+		localStorage.setItem("sbSongContent" + id, content);
 		localStorage.setItem("sbSongCount", (songCount + 1).toString());
+		return id;
+	}
+
+	function newSong() {
+		var date = Date.now();
+		var id = addSong(JSON.stringify({
+			title: "", artist: "", dateModified: date, dateCreated: date,
+		}), "{}", "");
 		location.href = "edit.html?id=" + id;
 	}
 
-	function tortureTest(n) {
-		localStorage.setItem("sbSongCount", n.toString());
-		for (var i = 0; i < n; i++) {
-			localStorage.setItem("sbSongHead" + i.toString(), JSON.stringify({
-				title: "Test " + i.toString(),
-				artist: "",
-				dateModified: Date.now(),
-				dateCreated: Date.now(),
-			}));
-		}
+	function importSong() {
+		var picker = document.createElement("input");
+		picker.setAttribute("type", "file");
+		picker.setAttribute("accept", ".sbsong");
+		picker.addEventListener("change", function() {
+			if (picker.files.length !== 1) return;
+			var file = picker.files[0];
+			var date = Date.now();
+			file.text().then(function(text) {
+				var input = {buffer: text, index: 0};
+				var head = validateJSON(
+					{title: "", artist: ""},
+					readUntil(input, "\n"),
+					{dateModified: date, dateCreated: date},
+				);
+				var settings = validateJSON({}, readUntil(input, "\n"), {});
+				var content = readUntil(input, null);
+				var id = addSong(head, settings, content);
+				location.href = "song.html?id=" + id;
+			});
+		});
+		picker.click();
 	}
 </script>
 </html>

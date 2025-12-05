@@ -13,6 +13,23 @@ function validateId(id) {
 	return true;
 }
 
+function validateJSON(defaults, json, overrides) {
+	var obj = {};
+	for (var key in defaults) obj[key] = defaults[key];
+	try {
+		var parsed = JSON.parse(json, function(key, value) {
+			// we want to convert everything to strings except dates and the top-level object
+			if (key === "dateModified" || key === "dateCreated") return value;
+			if (key) return value.toString();
+			return value;
+		});
+		for (var key in parsed) obj[key] = parsed[key];
+		for (var key in overrides) obj[key] = overrides[key];
+		return JSON.stringify(obj);
+	}
+	catch (SyntaxError) {return JSON.stringify(obj);}
+}
+
 // SETTINGS
 
 var settings = JSON.parse(localStorage.getItem("sbSettings") || "{}");

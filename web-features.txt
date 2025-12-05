@@ -24,3 +24,4 @@ APIs:
 	Node.firstChild, .nextSibling
 	serviceWorker (optional)
 	prompt
+	document.createElement, .setAttribute, .click

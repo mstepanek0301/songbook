@@ -1,7 +1,8 @@
+- use custom format for heads/settings instead of JSON
 - manual for writing songs
 - custom order of songs in books
 - files
-	- import and export songs and books
+	- import and export books
 	- backup/restore all data
 - style
 	- animations

@@ -53,6 +53,7 @@
 			<option value="rtl">Right-to-left</option>
 		</select></label>
 		<button onclick="deleteSong()">Delete song</button>
+		<button onclick="saveAsFile()">Save as file</button>
 	</details>
 	<label>Song contents <textarea cols="60" id="content"></textarea></label>
 </body>
@@ -84,23 +85,30 @@
 
 	document.getElementById("done").href = "song.html?id=" + id;
 
+	function getHead() {
+		return JSON.stringify({
+			title: getValue("title"),
+			artist: getValue("artist"),
+			dateModified: Date.now(),
+			dateCreated: songHead.dateCreated,
+		});
+	}
+	function getSettings() {
+		return JSON.stringify({
+			scale: getValue("scale"),
+			tuning: getValue("tuning"),
+			capo: getValue("capo"),
+			dir: getValue("dir"),
+		});
+	}
+
 	function unsave() {
 		saved = false;
 	}
 	function save() {
 		if (saved || deleted) return;
-		localStorage.setItem("sbSongHead" + id, JSON.stringify({
-			title: getValue("title"),
-			artist: getValue("artist"),
-			dateModified: Date.now(),
-			dateCreated: songHead.dateCreated,
-		}));
-		localStorage.setItem("sbSongSettings" + id, JSON.stringify({
-			scale: getValue("scale"),
-			tuning: getValue("tuning"),
-			capo: getValue("capo"),
-			dir: getValue("dir"),
-		}));
+		localStorage.setItem("sbSongHead" + id, getHead());
+		localStorage.setItem("sbSongSettings" + id, getSettings());
 		localStorage.setItem("sbSongContent" + id, getValue("content"));
 	}
 	setupSaving(save, unsave);
@@ -122,5 +130,15 @@
 		document.getElementById("content").dir = value;
 	}
 	updateDir(songSettings.dir);
+
+	function saveAsFile() {
+		var blob = new Blob([getHead(), "\n", getSettings(), "\n", getValue("content")]);
+		var link = document.createElement("a");
+		var url = URL.createObjectURL(blob);
+		link.setAttribute("href", url);
+		link.setAttribute("download", getValue("title") + ".sbsong");
+		link.click();
+		URL.revokeObjectURL(url);
+	}
 </script>
 </html>
